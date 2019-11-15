@@ -1,87 +1,102 @@
 'use strict';
 
 const assert = require('assert');
-const Koa = require('koa');
-const request = require('supertest');
-const cors = require('../');
+const inject = require('injectar');
+const corsen = require('../');
+
+const body = { foo: 'bar' };
+function buildDispatch(cors) {
+  return async function(req, res) {
+    await cors(req, res);
+    res.setHeader('content-type', 'application/json charset=utf-8');
+    res.end(JSON.stringify(body));
+  };
+}
 
 describe('cors.test.js', function() {
   describe('default options', function() {
-    const app = new Koa();
-    app.use(cors());
-    app.use(function(ctx) {
-      ctx.body = { foo: 'bar' };
-    });
+    const dispatch = buildDispatch(corsen());
 
-    it('should not set `Access-Control-Allow-Origin` when request Origin header missing', function(done) {
-      request(app.listen())
+    it('should not set `access-control-allow-origin` when request `origin` header missing', function(done) {
+      inject(dispatch)
         .get('/')
-        .expect({ foo: 'bar' })
-        .expect(200, function(err, res) {
+        .end((err, res) => {
           assert(!err);
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
           assert(!res.headers['access-control-allow-origin']);
           done();
         });
     });
 
-    it('should set `Access-Control-Allow-Origin` to request origin header', function(done) {
-      request(app.listen())
+    it('should set `access-control-allow-origin` to request origin header', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-allow-origin'], 'http://koajs.com');
+          done();
+        });
     });
 
     it('should 204 on Preflight Request', function(done) {
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')
-        .expect('Access-Control-Allow-Methods', 'GET,HEAD,PUT,POST,DELETE,PATCH')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-allow-origin'], 'http://koajs.com');
+          assert.strictEqual(res.headers['access-control-allow-methods'], 'GET,HEAD,PUT,POST,DELETE,PATCH');
+          done();
+        });
     });
 
-    it('should not Preflight Request if request missing Access-Control-Request-Method', function(done) {
-      request(app.listen())
+    it('should not Preflight Request if request missing access-control-request-method', function(done) {
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          done();
+        });
     });
 
-    it('should always set `Vary` to Origin', function(done) {
-      request(app.listen())
+    it('should always set `vary` to Origin', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Vary', 'Origin')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
+        .header('origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers.vary, 'Origin');
+          done();
+        });
     });
   });
 
   describe('options.origin=*', function() {
-    const app = new Koa();
-    app.use(cors({
+    const dispatch = buildDispatch(corsen({
       origin: '*',
     }));
-    app.use(function(ctx) {
-      ctx.body = { foo: 'bar' };
-    });
 
-    it('should always set `Access-Control-Allow-Origin` to *', function(done) {
-      request(app.listen())
+    it('should always set `access-control-allow-origin` to *', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Allow-Origin', '*')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-allow-origin'], '*');
+          done();
+        });
     });
   });
 
   describe('options.origin=function', function() {
-    const app = new Koa();
-    app.use(cors({
+    const dispatch = buildDispatch(corsen({
       origin(ctx) {
         if (ctx.url === '/forbin') {
           return false;
@@ -89,154 +104,147 @@ describe('cors.test.js', function() {
         return '*';
       },
     }));
-    app.use(function(ctx) {
-      ctx.body = { foo: 'bar' };
-    });
 
     it('should disable cors', function(done) {
-      request(app.listen())
+      inject(dispatch)
         .get('/forbin')
-        .set('Origin', 'http://koajs.com')
-        .expect({ foo: 'bar' })
-        .expect(200, function(err, res) {
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
           assert(!err);
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
           assert(!res.headers['access-control-allow-origin']);
           done();
         });
     });
 
-    it('should set access-control-allow-origin to *', function(done) {
-      request(app.listen())
+    it('should set `access-control-allow-origin` to *', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect({ foo: 'bar' })
-        .expect('Access-Control-Allow-Origin', '*')
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-allow-origin'], '*');
+          done();
+        });
     });
   });
 
   describe('options.origin=async function', function() {
-    const app = new Koa();
-    app.use(cors({
-      async origin(ctx) {
-        if (ctx.url === '/forbin') {
+    const dispatch = buildDispatch(corsen({
+      async origin(req) {
+        if (req.url === '/forbin') {
           return false;
         }
         return '*';
       },
     }));
-    app.use(function(ctx) {
-      ctx.body = { foo: 'bar' };
-    });
 
     it('should disable cors', function(done) {
-      request(app.listen())
+      inject(dispatch)
         .get('/forbin')
-        .set('Origin', 'http://koajs.com')
-        .expect({ foo: 'bar' })
-        .expect(200, function(err, res) {
-          assert(!err);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
           assert(!res.headers['access-control-allow-origin']);
           done();
         });
     });
 
-    it('should set access-control-allow-origin to *', function(done) {
-      request(app.listen())
+    it('should set `access-control-allow-origin` to *', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect({ foo: 'bar' })
-        .expect('Access-Control-Allow-Origin', '*')
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-allow-origin'], '*');
+          done();
+        });
     });
   });
 
   describe('options.exposeHeaders', function() {
-    it('should Access-Control-Expose-Headers: `content-length`', function(done) {
-      const app = new Koa();
-      app.use(cors({
+    it('should `access-control-expose-headers`: `content-length`', function(done) {
+      const dispatch = buildDispatch(corsen({
         exposeHeaders: 'content-length',
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Expose-Headers', 'content-length')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-expose-headers'], 'content-length');
+          done();
+        });
     });
 
     it('should work with array', function(done) {
-      const app = new Koa();
-      app.use(cors({
+      const dispatch = buildDispatch(corsen({
         exposeHeaders: [ 'content-length', 'x-header' ],
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Expose-Headers', 'content-length,x-header')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-expose-headers'], 'content-length,x-header');
+          done();
+        });
     });
   });
 
   describe('options.maxAge', function() {
-    it('should set maxAge with number', function(done) {
-      const app = new Koa();
-      app.use(cors({
+    it('should set `maxAge` with number', function(done) {
+      const dispatch = buildDispatch(corsen({
         maxAge: 3600,
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Max-Age', '3600')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-max-age'], '3600');
+          done();
+        });
     });
 
-    it('should set maxAge with string', function(done) {
-      const app = new Koa();
-      app.use(cors({
+    it('should set `maxAge` with string', function(done) {
+      const dispatch = buildDispatch(corsen({
         maxAge: '3600',
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Max-Age', '3600')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-max-age'], '3600');
+          done();
+        });
     });
 
-    it('should not set maxAge on simple request', function(done) {
-      const app = new Koa();
-      app.use(cors({
+    it('should not set `maxAge` on simple request', function(done) {
+      const dispatch = buildDispatch(corsen({
         maxAge: '3600',
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect({ foo: 'bar' })
-        .expect(200, function(err, res) {
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
           assert(!err);
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
           assert(!res.headers['access-control-max-age']);
           done();
         });
@@ -244,278 +252,136 @@ describe('cors.test.js', function() {
   });
 
   describe('options.credentials', function() {
-    const app = new Koa();
-    app.use(cors({
+    const dispatch = buildDispatch(corsen({
       credentials: true,
     }));
-    app.use(function(ctx) {
-      ctx.body = { foo: 'bar' };
-    });
 
-    it('should enable Access-Control-Allow-Credentials on Simple request', function(done) {
-      request(app.listen())
+    it('should enable `access-control-allow-credentials` on Simple request', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Allow-Credentials', 'true')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers['access-control-allow-credentials'], 'true');
+          done();
+        });
     });
 
-    it('should enable Access-Control-Allow-Credentials on Preflight request', function(done) {
-      request(app.listen())
+    it('should enable `access-control-allow-credentials` on Preflight request', function(done) {
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'DELETE')
-        .expect('Access-Control-Allow-Credentials', 'true')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'DELETE')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-allow-credentials'], 'true');
+          done();
+        });
     });
   });
 
   describe('options.allowHeaders', function() {
     it('should work with allowHeaders is string', function(done) {
-      const app = new Koa();
-      app.use(cors({
+      const dispatch = buildDispatch(corsen({
         allowHeaders: 'X-PINGOTHER',
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Allow-Headers', 'X-PINGOTHER')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-allow-headers'], 'X-PINGOTHER');
+          done();
+        });
     });
 
     it('should work with allowHeaders is array', function(done) {
-      const app = new Koa();
-      app.use(cors({
+      const dispatch = buildDispatch(corsen({
         allowHeaders: [ 'X-PINGOTHER' ],
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Allow-Headers', 'X-PINGOTHER')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-allow-headers'], 'X-PINGOTHER');
+          done();
+        });
     });
 
-    it('should set Access-Control-Allow-Headers to request access-control-request-headers header', function(done) {
-      const app = new Koa();
-      app.use(cors());
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
+    it('should set `access-control-allow-headers` to request `access-control-request-headers` header', function(done) {
+      const dispatch = buildDispatch(corsen());
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .set('access-control-request-headers', 'X-PINGOTHER')
-        .expect('Access-Control-Allow-Headers', 'X-PINGOTHER')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .header('access-control-request-headers', 'X-PINGOTHER')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-allow-headers'], 'X-PINGOTHER');
+          done();
+        });
     });
   });
 
   describe('options.allowMethods', function() {
     it('should work with allowMethods is array', function(done) {
-      const app = new Koa();
-      app.use(cors({
+      const dispatch = buildDispatch(corsen({
         allowMethods: [ 'GET', 'POST' ],
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Allow-Methods', 'GET,POST')
-        .expect(204, done);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
+          assert.strictEqual(res.headers['access-control-allow-methods'], 'GET,POST');
+          done();
+        });
     });
 
     it('should skip allowMethods', function(done) {
-      const app = new Koa();
-      app.use(cors({
+      const dispatch = buildDispatch(corsen({
         allowMethods: null,
       }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-      });
 
-      request(app.listen())
+      inject(dispatch)
         .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect(204, done);
-    });
-  });
-
-  describe('options.headersKeptOnError', function() {
-    it('should keep CORS headers after an error', function(done) {
-      const app = new Koa();
-      app.use(cors());
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        throw new Error('Whoops!');
-      });
-
-      request(app.listen())
-        .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')
-        .expect('Vary', 'Origin')
-        .expect(/Error/)
-        .expect(500, done);
-    });
-
-    it('should not affect OPTIONS requests', function(done) {
-      const app = new Koa();
-      app.use(cors());
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        throw new Error('Whoops!');
-      });
-
-      request(app.listen())
-        .options('/')
-        .set('Origin', 'http://koajs.com')
-        .set('Access-Control-Request-Method', 'PUT')
-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')
-        .expect(204, done);
-    });
-
-    it('should not keep unrelated headers', function(done) {
-      const app = new Koa();
-      app.use(cors());
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        ctx.set('X-Example', 'Value');
-        throw new Error('Whoops!');
-      });
-
-      request(app.listen())
-        .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')
-        .expect(/Error/)
-        .expect(500, function(err, res) {
-          if (err) {
-            return done(err);
-          }
-          assert(!res.headers['x-example']);
-          done();
-        });
-    });
-
-    it('should not keep CORS headers after an error if keepHeadersOnError is false', function(done) {
-      const app = new Koa();
-      app.use(cors({
-        keepHeadersOnError: false,
-      }));
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        throw new Error('Whoops!');
-      });
-
-      request(app.listen())
-        .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect(/Error/)
-        .expect(500, function(err, res) {
-          if (err) {
-            return done(err);
-          }
-          assert(!res.headers['access-control-allow-origin']);
-          assert(!res.headers.vary);
+        .header('Origin', 'http://koajs.com')
+        .header('access-control-request-method', 'PUT')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 204);
           done();
         });
     });
   });
 
-  describe('other middleware has been set `Vary` header to Accept-Encoding', function() {
-    const app = new Koa();
-    app.use(function(ctx, next) {
-      ctx.set('Vary', 'Accept-Encoding');
-      return next();
-    });
+  describe('other middleware has been set `vary` header to Accept-Encoding', function() {
+    const cors = corsen();
+    const dispatch = async function(req, res) {
+      res.setHeader('vary', 'Accept-Encoding');
+      await cors(req, res);
+      res.setHeader('content-type', 'application/json charset=utf-8');
+      res.end(JSON.stringify(body));
+    };
 
-    app.use(cors());
-
-    app.use(function(ctx) {
-      ctx.body = { foo: 'bar' };
-    });
-
-    it('should append `Vary` header to Origin', function(done) {
-      request(app.listen())
+    it('should append `vary` header to Origin', function(done) {
+      inject(dispatch)
         .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Vary', 'Accept-Encoding, Origin')
-        .expect({ foo: 'bar' })
-        .expect(200, done);
-    });
-  });
-  describe('other middleware has set vary header on Error', function() {
-    it('should append `Origin to other `Vary` header', function(done) {
-      const app = new Koa();
-      app.use(cors());
-
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        const error = new Error('Whoops!');
-        error.headers = { Vary: 'Accept-Encoding' };
-        throw error;
-      });
-
-      request(app.listen())
-        .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Vary', 'Accept-Encoding, Origin')
-        .expect(/Error/)
-        .expect(500, done);
-    });
-    it('should preserve `Vary: *`', function(done) {
-      const app = new Koa();
-      app.use(cors());
-
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        const error = new Error('Whoops!');
-        error.headers = { Vary: '*' };
-        throw error;
-      });
-
-      request(app.listen())
-        .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Vary', '*')
-        .expect(/Error/)
-        .expect(500, done);
-    });
-    it('should not append Origin` if already present in `Vary`', function(done) {
-      const app = new Koa();
-      app.use(cors());
-
-      app.use(function(ctx) {
-        ctx.body = { foo: 'bar' };
-        const error = new Error('Whoops!');
-        error.headers = { Vary: 'Origin, Accept-Encoding' };
-        throw error;
-      });
-
-      request(app.listen())
-        .get('/')
-        .set('Origin', 'http://koajs.com')
-        .expect('Vary', 'Origin, Accept-Encoding')
-        .expect(/Error/)
-        .expect(500, done);
+        .header('Origin', 'http://koajs.com')
+        .end((err, res) => {
+          assert.strictEqual(res.statusCode, 200);
+          assert.deepStrictEqual(res.json(), body);
+          assert.strictEqual(res.headers.vary, 'Accept-Encoding, Origin');
+          done();
+        });
     });
   });
 });

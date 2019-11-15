@@ -20,10 +20,10 @@
     "autod": "*",
     "eslint": "^5.15.1",
     "eslint-config-egg": "^7.1.0",
+    "injectar": "^1.2.1",
     "istanbul": "*",
     "koa": "^2.5.1",
-    "mocha": "3",
-    "supertest": "^3.1.0"
+    "mocha": "3"
   },
   "homepage": "https://github.com/koajs/cors",
   "repository": {
