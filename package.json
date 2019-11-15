@@ -1,6 +1,6 @@
 {
   "name": "corsen",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A universal Cross-Origin Resource Sharing(CORS) middleware",
   "main": "src/index.js",
   "files": [
