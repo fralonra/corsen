@@ -32,7 +32,7 @@ describe('cors.test.js', function () {
     it('should set `access-control-allow-origin` to request origin header', function (done) {
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -45,7 +45,7 @@ describe('cors.test.js', function () {
     it('should 204 on Preflight Request', function (done) {
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -59,7 +59,7 @@ describe('cors.test.js', function () {
     it('should not Preflight Request if request missing access-control-request-method', function (done) {
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -89,7 +89,7 @@ describe('cors.test.js', function () {
     it('should always set `access-control-allow-origin` to *', function (done) {
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -113,7 +113,7 @@ describe('cors.test.js', function () {
     it('should disable cors', function (done) {
       inject(dispatch)
         .get('/forbin')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -126,7 +126,7 @@ describe('cors.test.js', function () {
     it('should set `access-control-allow-origin` to *', function (done) {
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -150,7 +150,7 @@ describe('cors.test.js', function () {
     it('should disable cors', function (done) {
       inject(dispatch)
         .get('/forbin')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -163,7 +163,7 @@ describe('cors.test.js', function () {
     it('should set `access-control-allow-origin` to *', function (done) {
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -182,7 +182,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -199,7 +199,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -218,7 +218,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -235,7 +235,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -252,7 +252,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -271,7 +271,7 @@ describe('cors.test.js', function () {
     it('should enable `access-control-allow-credentials` on Simple request', function (done) {
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)
@@ -284,7 +284,7 @@ describe('cors.test.js', function () {
     it('should enable `access-control-allow-credentials` on Preflight request', function (done) {
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'DELETE')
         .end((err, res) => {
           assert(!err)
@@ -303,7 +303,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -320,7 +320,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -335,7 +335,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .header('access-control-request-headers', 'X-PINGOTHER')
         .end((err, res) => {
@@ -355,7 +355,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -372,7 +372,7 @@ describe('cors.test.js', function () {
 
       inject(dispatch)
         .options('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .header('access-control-request-method', 'PUT')
         .end((err, res) => {
           assert(!err)
@@ -394,7 +394,7 @@ describe('cors.test.js', function () {
     it('should append `vary` header to Origin', function (done) {
       inject(dispatch)
         .get('/')
-        .header('Origin', 'http://koajs.com')
+        .header('origin', 'http://koajs.com')
         .end((err, res) => {
           assert(!err)
           assert.strictEqual(res.statusCode, 200)

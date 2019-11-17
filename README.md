@@ -7,12 +7,12 @@ corsen
 
 [npm-image]: https://img.shields.io/npm/v/corsen.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/corsen
-[travis-image]: https://img.shields.io/travis/fralonra/cors.svg?style=flat-square
-[travis-url]: https://travis-ci.org/fralonra/cors
+[travis-image]: https://img.shields.io/travis/fralonra/corsen.svg?style=flat-square
+[travis-url]: https://travis-ci.org/fralonra/corsen
 [download-image]: https://img.shields.io/npm/dm/corsen.svg?style=flat-square
 [download-url]: https://npmjs.org/package/corsen
 
-A universal [Cross-Origin Resource Sharing(CORS)](https://developer.mozilla.org/en/docs/Web/HTTP/Access_control_CORS) middleware. Derrived from [@koa/cors](https://github.com/koajs/cors)
+A universal [Cross-Origin Resource Sharing(CORS)](https://developer.mozilla.org/en/docs/Web/HTTP/Access_control_CORS) middleware. Derrived from [@koa/cors](https://github.com/koajs/cors).
 
 ## Installation
 
@@ -73,6 +73,10 @@ All the commit before [71c4d00](https://github.com/fralonra/corsen/commit/71c4d0
 - The middleware function returned by `corsen` has a signature of `function(http.IncomingMessage, http.ServerResponse)`, while `@koa/cors` recieves a koa's `Context` object.
 - All the header names set in `corsen` are lowercase.
 - `corsen` has removed the error handling utility of `@koa/cors`. There is not `keepHeadersOnError` porperty in options.
+
+## Examples
+
+[felid-cors](https://github.com/felidjs/felid-cors) A [Felid](https://github.com/felidjs/felid) plugin for CORS.
 
 ## License
 
