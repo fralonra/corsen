@@ -8,7 +8,7 @@ corsen
 [npm-image]: https://img.shields.io/npm/v/corsen.svg?style=flat-square
 [npm-url]: https://npmjs.org/package/corsen
 [travis-image]: https://img.shields.io/travis/fralonra/corsen.svg?style=flat-square
-[travis-url]: https://travis-ci.org/fralonra/corsen
+[travis-url]: https://travis-ci.com/fralonra/corsen
 [download-image]: https://img.shields.io/npm/dm/corsen.svg?style=flat-square
 [download-url]: https://npmjs.org/package/corsen
 
